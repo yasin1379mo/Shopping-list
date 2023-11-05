@@ -15,18 +15,49 @@ function addItem(e) {
     alert("Please add a new item");
     return;
   }
+  // create item DOM element
+  addItemToDom(newItem);
 
-  //create list item
-  const li = document.createElement("li");
-  li.innerHTML = `${newItem} 
-  <button class="remove-item btn-link text-red">
-  <i class="fa-solid fa-xmark"></i>
-</button>`;
-  itemList.appendChild(li);
+  //add item to local storage
+  addItemToLocalStorage(newItem);
+
   checkUI();
   itemInput.value = "";
 }
 
+function addItemToDom(item) {
+  //create list item
+  const li = document.createElement("li");
+  li.innerHTML = `${item} 
+  <button class="remove-item btn-link text-red">
+  <i class="fa-solid fa-xmark"></i>
+</button>`;
+  itemList.appendChild(li);
+}
+
+function addItemToLocalStorage(item) {
+  let itemsFromStorage = getItemFromStorage(item);
+  //add new item
+  itemsFromStorage.push(item);
+  //convert to JSON and store in local storage
+  localStorage.setItem("items", JSON.stringify(itemsFromStorage));
+}
+
+function getItemFromStorage(item) {
+  let itemsFromStorage;
+  if (localStorage.getItem("items") === null) {
+    itemsFromStorage = [];
+  } else {
+    itemsFromStorage = JSON.parse(localStorage.getItem("items"));
+  }
+  return itemsFromStorage;
+}
+
+function displayItems() {
+  const itemsFromStorage = getItemFromStorage();
+  itemsFromStorage.forEach((item) => addItemToDom(item));
+  checkUI();
+}
 function removeItem(e) {
   if (e.target.parentElement.classList.contains("remove-item")) {
     if (confirm("Are you sure you want to remove?")) {
@@ -37,10 +68,27 @@ function removeItem(e) {
 }
 
 function clearItems() {
-  while (itemList.firstChild) {
-    itemList.removeChild(itemList.firstChild);
+  if (confirm("Are you sure you want to remove?")) {
+    while (itemList.firstChild) {
+      itemList.removeChild(itemList.firstChild);
+    }
   }
   checkUI();
+}
+
+function filterItems(e) {
+  const items = itemList.querySelectorAll("li");
+  const text = e.target.value.toLowerCase();
+
+  items.forEach((item) => {
+    const itemName = item.firstChild.textContent.toLowerCase();
+
+    if (itemName.indexOf(text) != -1) {
+      item.style.display = "flex";
+    } else {
+      item.style.display = "none";
+    }
+  });
 }
 
 function checkUI() {
@@ -55,9 +103,14 @@ function checkUI() {
   }
 }
 
+//initialize app
 // event listener
-itemForm.addEventListener("submit", addItem);
-itemList.addEventListener("click", removeItem);
-clear.addEventListener("click", clearItems);
-
-checkUI();
+function init() {
+  itemForm.addEventListener("submit", addItem);
+  itemList.addEventListener("click", removeItem);
+  clear.addEventListener("click", clearItems);
+  filter.addEventListener("input", filterItems);
+  document.addEventListener("DOMContentLoaded", displayItems);
+  checkUI();
+}
+init();
