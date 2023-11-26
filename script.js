@@ -6,6 +6,47 @@ const clear = document.querySelector("#clear");
 const filter = document.querySelector("#filter");
 let isEditMode = false;
 const formBtn = itemForm.querySelector("button");
+const lgnBtn = document.querySelector("#lgnBtn");
+const logoutButton = document.querySelector("#logoutButton");
+
+
+
+// id github = parrsa
+
+
+function login(e) {
+  e.preventDefault();
+
+  const user = document.querySelector("#username").value;
+  const password = document.querySelector("#password").value;
+
+  const validUsers = {
+    p: "p",
+    y: "y",
+    m: "m",
+  };
+
+  if (!(user in validUsers) || validUsers[user] !== password) {
+    alert(
+      "Invalid username or password. Please try again or create a new account."
+    );
+    user = "";
+    password = "";
+    return;
+  }
+
+  // Retrieve user-specific items from local storage
+  const itemsFromStorage =
+    JSON.parse(localStorage.getItem(`${user}-items`)) || [];
+
+  // Display the items for the logged-in user
+  itemsFromStorage.forEach((item) => addItemToDom(item));
+
+  // Adjust UI - display the to-do list, hide the login form, etc.
+  document.querySelector("#toDoList").style.display = "block";
+  document.querySelector("#lgnForm").style.display = "none";
+  checkUI();
+}
 
 function addItem(e) {
   e.preventDefault();
@@ -52,26 +93,36 @@ function addItemToDom(item) {
 }
 
 function addItemToLocalStorage(item) {
-  let itemsFromStorage = getItemFromStorage(item);
-  //add new item
+  const user = document.querySelector("#username").value;
+  let itemsFromStorage =
+    JSON.parse(localStorage.getItem(`${user}-items`)) || [];
+
+  // Add the new item to the user's array
   itemsFromStorage.push(item);
-  //convert to JSON and store in local storage
-  localStorage.setItem("items", JSON.stringify(itemsFromStorage));
+
+  // Save the updated array back to local storage
+  localStorage.setItem(`${user}-items`, JSON.stringify(itemsFromStorage));
 }
 
-function getItemFromStorage(item) {
-  let itemsFromStorage;
-  if (localStorage.getItem("items") === null) {
-    itemsFromStorage = [];
-  } else {
-    itemsFromStorage = JSON.parse(localStorage.getItem("items"));
-  }
+function getItemFromStorage() {
+  const user = document.querySelector("#username").value;
+  let itemsFromStorage =
+    JSON.parse(localStorage.getItem(`${user}-items`)) || [];
   return itemsFromStorage;
 }
 
 function displayItems() {
-  const itemsFromStorage = getItemFromStorage();
+  const user = document.querySelector("#username").value;
+  const itemsFromStorage =
+    JSON.parse(localStorage.getItem(`${user}-items`)) || [];
+
+  // Clear the current items list on the UI
+  const itemList = document.querySelector("#item-list");
+  itemList.innerHTML = "";
+
+  // Display the items retrieved from local storage for the user
   itemsFromStorage.forEach((item) => addItemToDom(item));
+
   checkUI();
 }
 
@@ -115,20 +166,22 @@ function removeItem(item) {
 }
 
 function removeItemFromStorage(itemIndex) {
-  let itemsFromStorage = getItemFromStorage();
+  const user = document.querySelector("#username").value;
+  let itemsFromStorage =
+    JSON.parse(localStorage.getItem(`${user}-items`)) || [];
   itemsFromStorage.splice(itemIndex, 1);
-
-  // Update local storage with the updated array
-  localStorage.setItem("items", JSON.stringify(itemsFromStorage));
+  localStorage.setItem(`${user}-items`, JSON.stringify(itemsFromStorage));
 }
 
 function clearItems() {
+  const user = document.querySelector("#username").value;
+
   if (confirm("Are you sure you want to remove?")) {
     while (itemList.firstChild) {
       itemList.removeChild(itemList.firstChild);
     }
   }
-  localStorage.removeItem("items");
+  localStorage.removeItem(`${user}-items`);
   checkUI();
 }
 
@@ -163,14 +216,32 @@ function checkUI() {
   isEditMode = false;
 }
 
+function logout() {
+  const user = document.querySelector("#username").value;
+
+  // Clear the items list on the UI
+  const itemList = document.querySelector("#item-list");
+  itemList.innerHTML = ""; // This will clear all items from the list
+
+  // Adjust UI - hide the to-do list, show the login form, etc.
+  document.querySelector("#toDoList").style.display = "none";
+  document.querySelector("#lgnForm").style.display = "block";
+
+  // Clear the username input for the next login
+  document.querySelector("#username").value = "";
+  document.querySelector("#password").value = "";
+}
+
 //initialize app
 // event listener
 function init() {
+  lgnBtn.addEventListener("click", login);
   itemForm.addEventListener("submit", addItem);
   itemList.addEventListener("click", onClickItem);
   clear.addEventListener("click", clearItems);
   filter.addEventListener("input", filterItems);
   document.addEventListener("DOMContentLoaded", displayItems);
+  logoutButton.addEventListener("click", logout);
   checkUI();
 }
 init();
